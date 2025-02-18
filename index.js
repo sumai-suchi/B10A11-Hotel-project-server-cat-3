@@ -2,7 +2,7 @@ const express=require('express');
 const cors=require('cors');
 const app=express();
 const port=process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config()
 
@@ -28,6 +28,87 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
+
+    const database=client.db('HotelRoomDB');
+    const Rooms=database.collection('Rooms');
+    const user_review=database.collection('user_review');
+
+
+    app.get('/Room',async(req,res)=>
+    {
+      const Cursor=Rooms.find();
+      const result=await Cursor.toArray();
+      console.log(result)
+      res.send(result)
+
+    })
+
+    app.get('/Room/:id',async(req,res)=>
+    {
+      const id=req.params.id;
+      // console.log(id)
+      const query={_id : new ObjectId(id)}
+      // console.log(query)
+      const result=await Rooms.findOne(query)
+      // console.log(result)
+      res.send(result)
+
+    })
+
+    app.put('/Room-update/:id',async(req,res)=>
+    {
+
+      console.log(req.params)
+      const {id}=req.params;
+      console.log(id)
+      const updateUser=req.body;
+      console.log(updateUser )
+      console.log(updateUser.buyer_email)
+      const filter={_id : new ObjectId(id)}
+      const Option={upsert:true}
+      const update=
+      {
+        $set:{
+
+          
+          availability:updateUser.availability,
+          date : updateUser.date, 
+          buyer_email:updateUser.buyer_email
+
+        }
+      }
+
+      const result= await Rooms.updateOne(filter,update,Option);
+      res.send( result)
+        
+    })
+
+   app.get('/MyBookedRoom',async(req,res)=>
+   {
+     console.log(req.query.email)
+     const email=req.query.email;
+     if(!email){
+      return res.status(400).send({message:"email is required!"})
+     }
+
+     const filter={"buyer_email":email}
+
+     const result= await Rooms.find(filter).toArray();
+     res.send(result)
+   })
+
+   app.post('/UserReview',async(req,res)=>
+  {
+    const reviewData=req.body;
+    console.log(reviewData)
+
+    const result= await user_review.insertOne(reviewData)
+    res.send(result)
+  })
+
+
+
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
