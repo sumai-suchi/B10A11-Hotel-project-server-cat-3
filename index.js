@@ -32,6 +32,7 @@ async function run() {
     const database=client.db('HotelRoomDB');
     const Rooms=database.collection('Rooms');
     const user_review=database.collection('user_review');
+    const MyBooking=database.collection('MyBooking');
 
 
     app.get('/Room',async(req,res)=>
@@ -42,6 +43,7 @@ async function run() {
       res.send(result)
 
     })
+
 
     app.get('/Room/:id',async(req,res)=>
     {
@@ -82,20 +84,84 @@ async function run() {
       res.send( result)
         
     })
+    app.post('/MyBookedRoom',async(req,res)=>
+      {
+        const reviewData=req.body;
+        console.log(reviewData)
+    
+        const result= await MyBooking.insertOne(reviewData)
+        res.send(result)
+      })
 
-   app.get('/MyBookedRoom',async(req,res)=>
-   {
-     console.log(req.query.email)
-     const email=req.query.email;
-     if(!email){
-      return res.status(400).send({message:"email is required!"})
-     }
 
-     const filter={"buyer_email":email}
+ 
+   app.patch('/MyBookedRoom/:id',async(req,res)=>
+  {
+    
+    console.log(req.params)
+    const {id}=req.params;
+    console.log(id)
+    const updateUser=req.body;
+    console.log(updateUser )
+    console.log(updateUser.date)
+    const filter={_id : new ObjectId(id)}
+    
+    const update=
+    {
+      $set:{
 
-     const result= await Rooms.find(filter).toArray();
-     res.send(result)
-   })
+        
+        
+        date : new Date(updateUser.date), 
+        
+
+      }
+    }
+
+    const result= await MyBooking.updateOne(filter,update);
+    console.log(result)
+    res.send( result)
+      
+
+  })
+
+  app.delete('/MyBookedRoom/RoomCancel/:id',async(req,res)=>{
+    console.log(req.params)
+    const {id}=req.params;
+    console.log(id)
+    const query={_id : new ObjectId(id)}
+    console.log('query',query)
+
+    const result=await MyBooking.deleteOne(query)
+    console.log(result)
+    res.send(result)
+
+  })
+
+  app.get('/RoomReview',async(req,res)=>
+    {
+      
+      const Cursor= user_review.find();
+      const result=await Cursor.toArray();
+      console.log(result)
+      res.send(result)
+
+    })
+
+
+  app.get('/MyBookedRoom',async(req,res)=>
+    {
+      console.log(req.query.email)
+      const email=req.query.email;
+      if(!email){
+       return res.status(400).send({message:"email is required!"})
+      }
+ 
+      const filter={"buyer_email":email}
+ 
+      const result= await MyBooking.find(filter).toArray();
+      res.send(result)
+    })
 
    app.post('/UserReview',async(req,res)=>
   {
@@ -105,6 +171,26 @@ async function run() {
     const result= await user_review.insertOne(reviewData)
     res.send(result)
   })
+  
+  // app.patch('/UpdateRoomDetails/:id',async(req,res)=>
+  // {
+  //   const id=req.params.id;
+  //   console.log(id)
+  //   const filter={_id : new ObjectId(id)}
+  //   const updateUser=req.body;
+  //   const update=
+  //   {
+  //     $set:{
+
+        
+       
+  //       date : updateUser.date, 
+       
+
+  //     }
+  //   }
+  // })
+
 
 
 
