@@ -1,16 +1,59 @@
 const express=require('express');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const cookieParser = require('cookie-parser');
 const cors=require('cors');
 const app=express();
+
 const port=process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
 
 require('dotenv').config()
+const jwt=require('jsonwebtoken')
 
-app.use(cors())
+
+const corsOptions={
+  
+    origin:['http://localhost:5173'],
+    credentials:true,
+    optionsSuccessStatus:200
+  
+}
 app.use(express.json());
+app.use(cors(corsOptions))
+app.use(cookieParser())
 
+const verifyToken=(req,res,next)=>
+  {
+    console.log('inside verify token middleware', req?.cookies)
+    const token=req?.cookies?.token;
+    console.log(token)
+    
+  
+    if(!token)
+    {
+      return res.status(401).send({message:'Unauthorized access'})
+    }
+  
+    jwt.verify(token,process.env.SECRET_KEY,(err,decoded)=>
+    {
+      console.log(token)
+       if(err)
+       {
+        console.log(err)
+         return res.status(401).send({message:'UnAuthorized '})
+       }
+  
+       req.user=decoded;
+  
+      console.log(req.user)
+      console.log(req.user.email)
 
-
+      next();
+    })
+    
+  }  
+  
+  
 
 const uri = `mongodb+srv://${process.env.DB_user}:${process.env.DB_password}@cluster0.cgi21.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -34,13 +77,53 @@ async function run() {
     const user_review=database.collection('user_review');
     const MyBooking=database.collection('MyBooking');
 
+    //json web token
+   app.post('/jwt',async(req,res)=>
+  {
+    const email=req.body;
+    console.log(email)
+  const token=  jwt.sign(email,process.env.SECRET_KEY,{expiresIn:'365d'})
+    console.log(typeof( token))
+    res.cookie('token',token,{
+      httpOnly:true,
+      secure: process.env.NODE_ENV === "production", 
+      sameSite:process.env.NODE_ENV === "production" ? "none" : "strict",
+    })
+    .send({success:true})
 
-    app.get('/Room',async(req,res)=>
+  })
+  
+  app.get('/logOut',async(req,res)=>
+  {
+    res.clearCookie('token',{
+      maxAge:0,
+      httpOnly:true,
+      secure: process.env.NODE_ENV === "production", 
+      sameSite:process.env.NODE_ENV === "production" ? "none" : "strict",
+    }).send({success:true})
+  })
+
+    app.get('/RoomData',async(req,res)=>
     {
-      const Cursor=Rooms.find();
-      const result=await Cursor.toArray();
-      console.log(result)
-      res.send(result)
+      console.log(req.query)
+      const min=req.query?.min;
+      const max=req.query?.max;
+      console.log(min,max)
+      let query={}
+      if(min && max)
+      {
+         query={
+        price :{ $gte : parseInt(min),$lte : parseInt(max)}}
+
+        
+      }
+      console.log(query)
+
+      const Cursor=Rooms.find(query);
+        const result=await Cursor.toArray();
+        console.log(result)
+        res.send(result)
+      
 
     })
 
@@ -141,7 +224,8 @@ async function run() {
   app.get('/RoomReview',async(req,res)=>
     {
       
-      const Cursor= user_review.find();
+      const query={date : -1}
+      const Cursor= user_review.find().sort(query);
       const result=await Cursor.toArray();
       console.log(result)
       res.send(result)
@@ -149,10 +233,18 @@ async function run() {
     })
 
 
-  app.get('/MyBookedRoom',async(req,res)=>
+  app.get('/MyBookedRoom',verifyToken,async(req,res)=>
     {
-      console.log(req.query.email)
+      console.log(req.user)
+      const decodedEmail=req.user?.email;
+      console.log('decoded-->',decodedEmail)
+      
       const email=req.query.email;
+      console.log(req.query.email)
+      if(decodedEmail != email)
+      {
+        return res.status(401).send({message:'UnAuthorized '})
+      }
       if(!email){
        return res.status(400).send({message:"email is required!"})
       }
@@ -166,31 +258,18 @@ async function run() {
    app.post('/UserReview',async(req,res)=>
   {
     const reviewData=req.body;
+    console.log(typeof(reviewData))
+    reviewData.date=new Date()
     console.log(reviewData)
+    
 
     const result= await user_review.insertOne(reviewData)
     res.send(result)
   })
+
+
   
-  // app.patch('/UpdateRoomDetails/:id',async(req,res)=>
-  // {
-  //   const id=req.params.id;
-  //   console.log(id)
-  //   const filter={_id : new ObjectId(id)}
-  //   const updateUser=req.body;
-  //   const update=
-  //   {
-  //     $set:{
-
-        
-       
-  //       date : updateUser.date, 
-       
-
-  //     }
-  //   }
-  // })
-
+  
 
 
 

@@ -1,7 +1,7 @@
 {
   "name": "b10a11-hotel-project-server-cat-3",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "node index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,9 +10,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5"
   }
 }
