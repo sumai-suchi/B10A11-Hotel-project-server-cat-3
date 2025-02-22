@@ -8,7 +8,8 @@ const port=process.env.PORT || 5000;
 
 
 require('dotenv').config()
-const jwt=require('jsonwebtoken')
+const jwt=require('jsonwebtoken');
+const { error } = require('console');
 
 
 const corsOptions={
@@ -175,7 +176,7 @@ async function run() {
         const result= await MyBooking.insertOne(reviewData)
         res.send(result)
       })
-
+      
 
  
    app.patch('/MyBookedRoom/:id',async(req,res)=>
@@ -208,6 +209,35 @@ async function run() {
 
   })
 
+
+  
+  app.patch('/RoomAvailable/:id',async(req,res)=>
+    {
+      
+      console.log(req.params)
+      const {id}=req.params;
+      console.log(id)
+      const updateUser=req.body;
+      console.log(updateUser )
+    
+      const filter={_id : new ObjectId(id)}
+      const Option={upsert:true}
+      const update=
+      {
+        $set:{
+
+          
+          availability:updateUser.availability,
+        
+
+        }
+      }
+
+      const result= await Rooms.updateOne(filter,update,Option);
+      res.send( result)
+        
+    })
+  
   app.delete('/MyBookedRoom/RoomCancel/:id',async(req,res)=>{
     console.log(req.params)
     const {id}=req.params;
