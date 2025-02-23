@@ -1,20 +1,29 @@
+
+require("dotenv").config();
 const express=require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cookieParser = require('cookie-parser');
+const jwt=require('jsonwebtoken');
 const cors=require('cors');
+
 const app=express();
 
 const port=process.env.PORT || 5000;
 
 
-require('dotenv').config()
-const jwt=require('jsonwebtoken');
-const { error } = require('console');
+// if (process.env.NODE_ENV !== "production") {
+//   require("dotenv").config();
+// }
+
+
 
 
 const corsOptions={
   
-    origin:['http://localhost:5173'],
+    origin:['http://localhost:5173',
+      `https://hotel-project-client-cat-3.web.app`
+     
+    ],
     credentials:true,
     optionsSuccessStatus:200
   
@@ -70,7 +79,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
 
     const database=client.db('HotelRoomDB');
@@ -271,7 +280,7 @@ async function run() {
       
       const email=req.query.email;
       console.log(req.query.email)
-      if(decodedEmail != email)
+      if(decodedEmail !== email)
       {
         return res.status(401).send({message:'UnAuthorized '})
       }
@@ -304,8 +313,8 @@ async function run() {
 
 
 
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
